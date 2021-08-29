@@ -1,13 +1,14 @@
-import os
 import logging
-from tqdm import tqdm, trange
+import os
 
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
-from transformers import BertConfig, AdamW, get_linear_schedule_with_warmup
+from tqdm import tqdm, trange
+from transformers import AdamW, BertConfig, get_linear_schedule_with_warmup
 
-from utils import MODEL_CLASSES, compute_metrics, get_intent_labels, get_slot_labels
+from utils import (MODEL_CLASSES, compute_metrics, get_intent_labels,
+                   get_slot_labels)
 
 logger = logging.getLogger(__name__)
 tr_loss_log = r'train_loss.txt'

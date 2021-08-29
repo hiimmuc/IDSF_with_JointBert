@@ -1,15 +1,14 @@
+import logging
 import os
 import random
-import logging
 
-import torch
 import numpy as np
-from seqeval.metrics import precision_score, recall_score, f1_score
+import torch
+from seqeval.metrics import f1_score, precision_score, recall_score
+from transformers import (AlbertConfig, AlbertTokenizer, BertConfig,
+                          BertTokenizer, DistilBertConfig, DistilBertTokenizer)
 
-from transformers import BertConfig, DistilBertConfig, AlbertConfig
-from transformers import BertTokenizer, DistilBertTokenizer, AlbertTokenizer
-
-from model import JointBERT, JointDistilBERT, JointAlbert
+from model import JointAlbert, JointBERT, JointDistilBERT
 
 MODEL_CLASSES = {
     'bert': (BertConfig, JointBERT, BertTokenizer),
@@ -51,11 +50,13 @@ def set_seed(args):
 
 
 def compute_metrics(intent_preds, intent_labels, slot_preds, slot_labels):
-    assert len(intent_preds) == len(intent_labels) == len(slot_preds) == len(slot_labels)
+    assert len(intent_preds) == len(intent_labels) == len(
+        slot_preds) == len(slot_labels)
     results = {}
     intent_result = get_intent_acc(intent_preds, intent_labels)
     slot_result = get_slot_metrics(slot_preds, slot_labels)
-    sementic_result = get_sentence_frame_acc(intent_preds, intent_labels, slot_preds, slot_labels)
+    sementic_result = get_sentence_frame_acc(
+        intent_preds, intent_labels, slot_preds, slot_labels)
 
     results.update(intent_result)
     results.update(slot_result)
