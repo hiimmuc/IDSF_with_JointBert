@@ -5,7 +5,7 @@ speech recognition and intents, text segmentation to extract information from sp
 
 import time
 
-from predict_custom import JointBertTools
+from inference import JointBertTools
 from stt_tools.convert_audio_format import convert
 from stt_tools.speech_recognition_imp import read_from_microphone
 from tools import *
