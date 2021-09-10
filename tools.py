@@ -70,7 +70,7 @@ def weather_outdoor(city_name='Hanoi', specific=None):
     """
     if not specific:
         specific = ''
-    thinking = ''
+    msg = ''
     try:
         api = r"330ff11e86b5ccbeba0a2f71aab88014"
         # city_name = convert_languages(city_name, dest='en').replace(' ', '').lower()
@@ -78,7 +78,7 @@ def weather_outdoor(city_name='Hanoi', specific=None):
         url = f"https://api.openweathermap.org/data/2.5/weather?appid={api}&q={city_name}"
         response = requests.get(url)
         data = response.json()
-        # print(data)
+
         if data["cod"] != "404":
             data_table = data["main"]
             current_temperature = data_table['temp'] - 273.15
@@ -86,16 +86,16 @@ def weather_outdoor(city_name='Hanoi', specific=None):
             current_humidity = data_table["humidity"]
             some_text = data["weather"]
             weather_description = some_text[0]["description"]
-            # weather_description = convert_languages(
-            #     weather_description, 'en', 'vi')
-            thinking = f"City: {data['name']}, {data['sys']['country']}\n" \
+
+            msg = f"City: {data['name']}, {data['sys']['country']}\n" \
                 f"{datetime.datetime.now()}\n" \
                 f"Weather summary: {weather_description}, \n" \
                 f">The temperature {round(current_temperature, 2)} Celsius, \n" \
                 f">The humidity is {current_humidity} %, \n" \
                 f">The pressure is {current_pressure} Pa"
+
             if not specific:
-                print(thinking)
+                print(msg)
             else:
                 if specific in ['temp', 'pressure', 'humidity']:
                     print(f"{specific}: {data_table[f'{specific}']}")
@@ -109,10 +109,13 @@ def weather_outdoor(city_name='Hanoi', specific=None):
 
 
 def youtube(what):
-    """play youtube video"""
+    '''search what on youtube, for steaming
+
+    Args:
+        what (str): what to search for
+    '''
     while True:
         result = YoutubeSearch(what, max_results=10).to_dict()
-        # print(result)
         if result:
             break
     url = 'https://www.youtube.com' + result[0]['url_suffix']
@@ -120,7 +123,14 @@ def youtube(what):
 
 
 def get_expression(text):
-    """Extract intents and slot values from text string"""
+    '''extract slot and value form string of text with regex
+
+    Args:
+        text ([str]): ex: let play the <song:B-object_type> <Hello:B-track> <aldele:I-track> for me
+
+    Returns:
+        dict: dict["B-object_type"] = song ,...
+    '''
     pair = {}
     for slot_and_value in re.findall("<(.+?)>", text):
         value, slot = slot_and_value.split(":")

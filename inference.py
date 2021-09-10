@@ -5,9 +5,9 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 from tqdm import tqdm
+
 from utils import (MODEL_CLASSES, get_intent_labels, get_slot_labels,
                    init_logger, load_tokenizer)
-
 
 
 class JointBertTools:
@@ -79,16 +79,19 @@ class JointBertTools:
             for word in words:
                 word_tokens = tokenizer.tokenize(word)
                 if not word_tokens:
-                    word_tokens = [unk_token]  # For handling the bad-encoded word
+                    # For handling the bad-encoded word
+                    word_tokens = [unk_token]
                 tokens.extend(word_tokens)
                 # Use the real label id for the first token of the word, and padding ids for the remaining tokens
-                slot_label_mask.extend([pad_token_label_id + 1] + [pad_token_label_id] * (len(word_tokens) - 1))
+                slot_label_mask.extend(
+                    [pad_token_label_id + 1] + [pad_token_label_id] * (len(word_tokens) - 1))
 
             # Account for [CLS] and [SEP]
             special_tokens_count = 2
             if len(tokens) > args.max_seq_len - special_tokens_count:
                 tokens = tokens[: (args.max_seq_len - special_tokens_count)]
-                slot_label_mask = slot_label_mask[:(args.max_seq_len - special_tokens_count)]
+                slot_label_mask = slot_label_mask[:(
+                    args.max_seq_len - special_tokens_count)]
 
             # Add [SEP] token
             tokens += [sep_token]
@@ -103,14 +106,18 @@ class JointBertTools:
             input_ids = tokenizer.convert_tokens_to_ids(tokens)
 
             # The mask has 1 for real tokens and 0 for padding tokens. Only real tokens are attended to.
-            attention_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
+            attention_mask = [
+                1 if mask_padding_with_zero else 0] * len(input_ids)
 
             # Zero-pad up to the sequence length.
             padding_length = args.max_seq_len - len(input_ids)
             input_ids = input_ids + ([pad_token_id] * padding_length)
-            attention_mask = attention_mask + ([0 if mask_padding_with_zero else 1] * padding_length)
-            token_type_ids = token_type_ids + ([pad_token_segment_id] * padding_length)
-            slot_label_mask = slot_label_mask + ([pad_token_label_id] * padding_length)
+            attention_mask = attention_mask + \
+                ([0 if mask_padding_with_zero else 1] * padding_length)
+            token_type_ids = token_type_ids + \
+                ([pad_token_segment_id] * padding_length)
+            slot_label_mask = slot_label_mask + \
+                ([pad_token_label_id] * padding_length)
 
             all_input_ids.append(input_ids)
             all_attention_mask.append(attention_mask)
@@ -121,25 +128,31 @@ class JointBertTools:
         all_input_ids = torch.tensor(all_input_ids, dtype=torch.long)
         all_attention_mask = torch.tensor(all_attention_mask, dtype=torch.long)
         all_token_type_ids = torch.tensor(all_token_type_ids, dtype=torch.long)
-        all_slot_label_mask = torch.tensor(all_slot_label_mask, dtype=torch.long)
+        all_slot_label_mask = torch.tensor(
+            all_slot_label_mask, dtype=torch.long)
 
-        dataset = TensorDataset(all_input_ids, all_attention_mask, all_token_type_ids, all_slot_label_mask)
+        dataset = TensorDataset(
+            all_input_ids, all_attention_mask, all_token_type_ids, all_slot_label_mask)
 
         return dataset
 
     def predict(self, input_text=None):
         if not input_text:
             input_text = ['']
+        assert type(input_text) == list and type(input_text[0]) == str
 
-        # Convert input file to TensorDataset
+        # Convert input text to TensorDataset
         pad_token_label_id = self.args.ignore_index
         tokenizer = load_tokenizer(self.args)
-        lines = [[word for word in line.strip().split()] for line in input_text]
-        dataset = self.convert_input_file_to_tensor_dataset(lines, tokenizer, pad_token_label_id)
+        lines = [[word for word in line.strip().split()]
+                 for line in input_text]
+        dataset = self.convert_input_file_to_tensor_dataset(
+            lines, tokenizer, pad_token_label_id)
 
         # Predict
         sampler = SequentialSampler(dataset)
-        data_loader = DataLoader(dataset, sampler=sampler, batch_size=self.batch_size)
+        data_loader = DataLoader(
+            dataset, sampler=sampler, batch_size=self.batch_size)
 
         all_slot_label_mask = None
         intent_preds = None
@@ -161,29 +174,35 @@ class JointBertTools:
                 if intent_preds is None:
                     intent_preds = intent_logits.detach().cpu().numpy()
                 else:
-                    intent_preds = np.append(intent_preds, intent_logits.detach().cpu().numpy(), axis=0)
+                    intent_preds = np.append(
+                        intent_preds, intent_logits.detach().cpu().numpy(), axis=0)
 
                 # Slot prediction
                 if slot_preds is None:
                     if self.args.use_crf:
                         # decode() in `torchcrf` returns list with best index directly
-                        slot_preds = np.array(self.model.crf.decode(slot_logits))
+                        slot_preds = np.array(
+                            self.model.crf.decode(slot_logits))
                     else:
                         slot_preds = slot_logits.detach().cpu().numpy()
                     all_slot_label_mask = batch[3].detach().cpu().numpy()
                 else:
                     if self.args.use_crf:
-                        slot_preds = np.append(slot_preds, np.array(self.model.crf.decode(slot_logits)), axis=0)
+                        slot_preds = np.append(slot_preds, np.array(
+                            self.model.crf.decode(slot_logits)), axis=0)
                     else:
-                        slot_preds = np.append(slot_preds, slot_logits.detach().cpu().numpy(), axis=0)
-                    all_slot_label_mask = np.append(all_slot_label_mask, batch[3].detach().cpu().numpy(), axis=0)
+                        slot_preds = np.append(
+                            slot_preds, slot_logits.detach().cpu().numpy(), axis=0)
+                    all_slot_label_mask = np.append(
+                        all_slot_label_mask, batch[3].detach().cpu().numpy(), axis=0)
 
         intent_preds = np.argmax(intent_preds, axis=1)
 
         if not self.args.use_crf:
             slot_preds = np.argmax(slot_preds, axis=2)
 
-        slot_label_map = {i: label for i, label in enumerate(self.slot_label_lst)}
+        slot_label_map = {i: label for i,
+                          label in enumerate(self.slot_label_lst)}
         slot_preds_list = [[] for _ in range(slot_preds.shape[0])]
 
         for i in range(slot_preds.shape[0]):
@@ -200,7 +219,8 @@ class JointBertTools:
                     line = line + word + " "
                 else:
                     line = line + "<{}:{}> ".format(word, pred)
-            output_line.append(f"{self.intent_label_lst[intent_pred]} ->  {line.strip()}")
+            output_line.append(
+                f"{self.intent_label_lst[intent_pred]} ->  {line.strip()}")
 
         self.logger.info("Prediction Done!")
         return output_line

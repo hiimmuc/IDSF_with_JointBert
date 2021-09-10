@@ -121,6 +121,7 @@ class JointProcessor(object):
                                      set_type=mode)
 
 
+# if training on other dataset, add <dataset_name>: JointProcessor to dict below
 processors = {
     "atis": JointProcessor,
     "snips": JointProcessor,

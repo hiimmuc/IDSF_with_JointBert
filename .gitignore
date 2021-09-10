@@ -7,3 +7,4 @@ atis_model/
 data/*.zip
 __pycache__/
 .idea/
+*_model/

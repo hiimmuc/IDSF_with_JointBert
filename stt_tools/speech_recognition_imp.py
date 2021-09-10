@@ -72,9 +72,5 @@ def read_from_microphone(lang='en-US'):
 
 if __name__ == '__main__':
     print(read_from_microphone())
-    # if isinstance(args.audio_path, str):
-    #     if args.audio_path == '':
-    #         print(read_from_microphone())
-    #     else:
-    #         print(read_from_audio(args.audio_path))
+
     pass
